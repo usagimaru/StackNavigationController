@@ -30,7 +30,7 @@ public class StackNavigationController: NSViewController {
 		self.viewControllers.isEmpty
 	}
 	
-	/// Can pop `topViewController`, without `rootViewController`
+	/// Can pop `topViewController`
 	var canPop: Bool {
 		self.viewControllers.count > 1
 	}
