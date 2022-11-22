@@ -2,12 +2,12 @@
 
 A lightweignt UINavigationController for macOS AppKit.
 
-[Licese](./LICENSE)
+[License](./LICENSE)
 
 
 ## Usage
 
-Setup with root view controller.
+Setup with the root view controller.
 
 ```swift
 // Root view controller
@@ -20,14 +20,14 @@ let stackNavigationController = StackNavigationController(rootViewController: ro
 stackNavigationController.delegate = self
 ```
 
-Push next view controller.
+Push the next view controller.
 
 ```swift
 let nextVC = NSViewController()
 stackNavigationController.pushViewController(nextVC)
 ```
 
-Pop current view controller, and back to previous.
+Pop the current view controller, and back to the previous.
 
 ```swift
 stackNavigationController.popViewController()
