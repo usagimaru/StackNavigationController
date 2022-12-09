@@ -17,36 +17,36 @@ public protocol StackNavigationControllerDelegate: AnyObject {
 open class StackNavigationController: NSViewController {
 	
 	/// Current displayed view controller
-	var topViewController: NSViewController? {
+	open var topViewController: NSViewController? {
 		self.viewControllers.last
 	}
 	
 	/// View controller at the first
-	var rootViewController: NSViewController? {
+	open var rootViewController: NSViewController? {
 		self.viewControllers.first
 	}
 	
-	var isViewControllersEmpty: Bool {
+	open var isViewControllersEmpty: Bool {
 		self.viewControllers.isEmpty
 	}
 	
 	/// Can pop `topViewController`
-	var canPop: Bool {
+	open var canPop: Bool {
 		self.viewControllers.count > 1
 	}
 	
-	weak var delegate: StackNavigationControllerDelegate?
+	open weak var delegate: StackNavigationControllerDelegate?
 	
 	/// View controller stack
-	private(set) var viewControllers: [NSViewController] = []
+	open private(set) var viewControllers: [NSViewController] = []
 	
 	
 	// MARK: -
 	
 	// To detect push/pop event without delegate, Override these in subclasses.
 	
-	func didPushViewController(_: NSViewController) {}
-	func didPopViewController(_: NSViewController) {}
+	open func didPushViewController(_: NSViewController) {}
+	open func didPopViewController(_: NSViewController) {}
 	
 	
 	// MARK: -
@@ -65,7 +65,7 @@ open class StackNavigationController: NSViewController {
 		super.init(coder: coder)
 	}
 	
-	func pushViewController(_ pushingViewController: NSViewController) {
+	open func pushViewController(_ pushingViewController: NSViewController) {
 		let previousVC = self.topViewController
 		pushingViewController.stackNavigationController = self
 		
@@ -112,7 +112,7 @@ open class StackNavigationController: NSViewController {
 	}
 	
 	@discardableResult
-	func popViewController() -> NSViewController? {
+	open func popViewController() -> NSViewController? {
 		guard self.canPop, let poppingVC = viewControllers.popLast(), let originalVC = topViewController
 		else { return nil }
 		
