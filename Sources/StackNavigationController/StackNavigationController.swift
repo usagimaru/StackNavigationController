@@ -14,7 +14,7 @@ public protocol StackNavigationControllerDelegate: AnyObject {
 	
 }
 
-public class StackNavigationController: NSViewController {
+open class StackNavigationController: NSViewController {
 	
 	/// Current displayed view controller
 	var topViewController: NSViewController? {
