@@ -23,6 +23,7 @@ class WindowController: NSWindowController,
 		let rootVC = ViewController.newViewController()
 		rootVC.loadView()
 		rootVC.label.stringValue = "Root View Controller"
+		rootVC.title = rootVC.label.stringValue
 		rootVC.view.layer?.backgroundColor = NSColor.tertiaryLabelColor.cgColor
 		
 		self.stackNavigationController.delegate = self
@@ -95,8 +96,16 @@ class WindowController: NSWindowController,
 	
 	// MARK: - StackNavigationControllerDelegate
 	
+	func stackNavigationController(_ navi: StackNavigationController, willPush viewController: NSViewController, current: NSViewController?) {
+		print(#function, "[Pushing]: '\(current?.title ?? "(none)")' -> '\(viewController.title ?? "(none)")'")
+	}
+	
 	func stackNavigationController(_ navi: StackNavigationController, didPush viewController: NSViewController) {
 		self.toolbar.validateVisibleItems()
+	}
+	
+	func stackNavigationController(_ navi: StackNavigationController, willPop viewController: NSViewController, next: NSViewController?) {
+		print(#function, "[Popping]: '\(viewController.title ?? "(none)")' -> '\(next?.title ?? "(none)")'")
 	}
 	
 	func stackNavigationController(_ navi: StackNavigationController, didPop viewController: NSViewController) {

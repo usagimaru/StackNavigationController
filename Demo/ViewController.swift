@@ -39,7 +39,7 @@ class ViewController: NSViewController {
 			
 			let count = stackNavigationController.viewControllers.count
 			nextVC.label.stringValue = "View Controller #\(count)"
-			
+			nextVC.title = nextVC.label.stringValue
 			nextVC.view.layer?.backgroundColor = NSColor(hue: CGFloat.random(in: 0..<1.0),
 														 saturation: 0.5,
 														 brightness: 1.0,

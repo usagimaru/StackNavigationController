@@ -7,10 +7,12 @@
 import Cocoa
 import ObjectiveC
 
-public protocol StackNavigationControllerDelegate: AnyObject {
+@objc public protocol StackNavigationControllerDelegate: AnyObject {
 	
-	func stackNavigationController(_ navi: StackNavigationController, didPush viewController: NSViewController)
-	func stackNavigationController(_ navi: StackNavigationController, didPop viewController: NSViewController)
+	@objc optional func stackNavigationController(_ navi: StackNavigationController, willPush viewController: NSViewController, current: NSViewController?)
+	@objc optional func stackNavigationController(_ navi: StackNavigationController, didPush viewController: NSViewController)
+	@objc optional func stackNavigationController(_ navi: StackNavigationController, willPop viewController: NSViewController, next: NSViewController?)
+	@objc optional func stackNavigationController(_ navi: StackNavigationController, didPop viewController: NSViewController)
 	
 }
 
@@ -45,7 +47,9 @@ open class StackNavigationController: NSViewController {
 	
 	// To detect push/pop event without delegate, Override these in subclasses.
 	
+	open func willPushViewController(_: NSViewController, current: NSViewController?) {}
 	open func didPushViewController(_: NSViewController) {}
+	open func willPopViewController(_: NSViewController, next: NSViewController?) {}
 	open func didPopViewController(_: NSViewController) {}
 	
 	
@@ -102,19 +106,25 @@ open class StackNavigationController: NSViewController {
 //			}
 //		}
 		
+		willPushViewController(pushingViewController, current: previousVC)
+		self.delegate?.stackNavigationController?(self, willPush: pushingViewController, current: previousVC)
+		
 		addChildViewController(pushingViewController)
 		viewControllers.append(pushingViewController)
 		
 		previousVC?.view.removeFromSuperview()
 		
 		didPushViewController(pushingViewController)
-		self.delegate?.stackNavigationController(self, didPush: pushingViewController)
+		self.delegate?.stackNavigationController?(self, didPush: pushingViewController)
 	}
 	
 	@discardableResult
 	open func popViewController() -> NSViewController? {
 		guard self.canPop, let poppingVC = viewControllers.popLast(), let originalVC = topViewController
 		else { return nil }
+		
+		willPopViewController(poppingVC, next: viewControllers.last)
+		self.delegate?.stackNavigationController?(self, willPop: poppingVC, next: viewControllers.last)
 		
 		originalVC.addView(on: self.view, positioned: .below, relativeTo: poppingVC.view)
 		
@@ -136,7 +146,7 @@ open class StackNavigationController: NSViewController {
 		
 		removeChildViewController(poppingVC)
 		didPopViewController(poppingVC)
-		self.delegate?.stackNavigationController(self, didPop: poppingVC)
+		self.delegate?.stackNavigationController?(self, didPop: poppingVC)
 		
 		return poppingVC
 	}
