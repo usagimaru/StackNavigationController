@@ -16,25 +16,25 @@ import ObjectiveC
 	
 }
 
-open class StackNavigationController: NSViewController {
+public class StackNavigationController: NSViewController {
 	
 	/// Current displayed view controller
 	open var topViewController: NSViewController? {
-		self.viewControllers.last
+		viewControllers.last
 	}
 	
 	/// View controller at the first
 	open var rootViewController: NSViewController? {
-		self.viewControllers.first
+		viewControllers.first
 	}
 	
 	open var isViewControllersEmpty: Bool {
-		self.viewControllers.isEmpty
+		viewControllers.isEmpty
 	}
 	
 	/// Can pop `topViewController`
 	open var canPop: Bool {
-		self.viewControllers.count > 1
+		viewControllers.count > 1
 	}
 	
 	open weak var delegate: StackNavigationControllerDelegate?
@@ -47,17 +47,17 @@ open class StackNavigationController: NSViewController {
 	
 	// To detect push/pop event without delegate, Override these in subclasses.
 	
-	open func willPushViewController(_: NSViewController, current: NSViewController?) {}
-	open func didPushViewController(_: NSViewController) {}
-	open func willPopViewController(_: NSViewController, next: NSViewController?) {}
-	open func didPopViewController(_: NSViewController) {}
+	public func willPushViewController(_: NSViewController, current: NSViewController?) {}
+	public func didPushViewController(_: NSViewController) {}
+	public func willPopViewController(_: NSViewController, next: NSViewController?) {}
+	public func didPopViewController(_: NSViewController) {}
 	
 	
 	// MARK: -
 	
 	override open func loadView() {
-		self.view = NSView()
-//		self.view.wantsLayer = true
+		view = NSView()
+		view.wantsLayer = true
 	}
 	
 	public init(rootViewController: NSViewController) {
@@ -69,45 +69,53 @@ open class StackNavigationController: NSViewController {
 		super.init(coder: coder)
 	}
 	
-	open func pushViewController(_ pushingViewController: NSViewController) {
-		let previousVC = self.topViewController
+	/// Pushing view controller without animation.
+	public func pushViewController(_ pushingViewController: NSViewController) {
+		pushViewController(pushingViewController, animated: false)
+	}
+	
+	/// Pushing view controller with animation.
+	/// I think animating is not getting good usability and not good feeling. We should respect standard macOS experiences.
+	public func pushViewControllerWithAnimation(_ pushingViewController: NSViewController) {
+		pushViewController(pushingViewController, animated: true)
+	}
+	
+	private func pushViewController(_ pushingViewController: NSViewController, animated: Bool) {
+		let previousVC = topViewController
 		pushingViewController.stackNavigationController = self
 		
-		/*
-		 I disabled these currently because not good usability.
-		 Respecting standard macOS experience.
-		 */
-		
-//		pushingViewController.view.wantsLayer = true
-//
-//		if let previousVC, animated {
-//			addChildViewController(pushingViewController)
-//
-//			let endFrame = previousVC.view.frame
-//			let startFrame = endFrame.offsetBy(dx: endFrame.width, dy: 0)
-//			pushingViewController.view.frame = startFrame
-//			pushingViewController.view.alphaValue = 0.85
-//
-//			viewControllers.append(pushingViewController)
-//
-//			NSAnimationContext.runAnimationGroup { context in
-//				context.duration = 0.2
-//				context.allowsImplicitAnimation = true
-//				context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-//				pushingViewController.view.animator().frame = endFrame
-//				pushingViewController.view.animator().alphaValue = 1
-//				previousVC.view.animator().alphaValue = 0.25
-//			} completionHandler: {
-//				previousVC.view.alphaValue = 1
-//				previousVC.view.removeFromSuperview()
-//
-//				self.didPushViewController(pushingViewController)
-//				self.delegate?.stackNavigationController(self, didPush: pushingViewController)
-//			}
-//		}
+		if animated {
+			pushingViewController.view.wantsLayer = true
+			
+			if let previousVC, animated {
+				addChildViewController(pushingViewController)
+				
+				let endFrame = previousVC.view.frame
+				let startFrame = endFrame.offsetBy(dx: endFrame.width, dy: 0)
+				pushingViewController.view.frame = startFrame
+				pushingViewController.view.alphaValue = 0.85
+				
+				viewControllers.append(pushingViewController)
+				
+				NSAnimationContext.runAnimationGroup { context in
+					context.duration = 0.2
+					context.allowsImplicitAnimation = true
+					context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+					pushingViewController.view.animator().frame = endFrame
+					pushingViewController.view.animator().alphaValue = 1
+					previousVC.view.animator().alphaValue = 0.25
+				} completionHandler: {
+					previousVC.view.alphaValue = 1
+					previousVC.view.removeFromSuperview()
+					
+					self.didPushViewController(pushingViewController)
+					self.delegate?.stackNavigationController?(self, didPush: pushingViewController)
+				}
+			}
+		}
 		
 		willPushViewController(pushingViewController, current: previousVC)
-		self.delegate?.stackNavigationController?(self, willPush: pushingViewController, current: previousVC)
+		delegate?.stackNavigationController?(self, willPush: pushingViewController, current: previousVC)
 		
 		addChildViewController(pushingViewController)
 		viewControllers.append(pushingViewController)
@@ -115,38 +123,52 @@ open class StackNavigationController: NSViewController {
 		previousVC?.view.removeFromSuperview()
 		
 		didPushViewController(pushingViewController)
-		self.delegate?.stackNavigationController?(self, didPush: pushingViewController)
+		delegate?.stackNavigationController?(self, didPush: pushingViewController)
+	}
+	
+	
+	/// Popping view controller without animation.
+	@discardableResult
+	public func popViewController() -> NSViewController? {
+		popViewController(animated: false)
+	}
+	
+	/// Popping view controller with animation.
+	/// I think animating is not getting good usability and not good feeling. We should respect standard macOS experiences.
+	@discardableResult
+	public func popViewControllerWithAnimation() -> NSViewController? {
+		popViewController(animated: true)
 	}
 	
 	@discardableResult
-	open func popViewController() -> NSViewController? {
-		guard self.canPop, let poppingVC = viewControllers.popLast(), let originalVC = topViewController
+	private func popViewController(animated: Bool) -> NSViewController? {
+		guard canPop, let poppingVC = viewControllers.popLast(), let originalVC = topViewController
 		else { return nil }
 		
 		willPopViewController(poppingVC, next: viewControllers.last)
-		self.delegate?.stackNavigationController?(self, willPop: poppingVC, next: viewControllers.last)
+		delegate?.stackNavigationController?(self, willPop: poppingVC, next: viewControllers.last)
 		
-		originalVC.addView(on: self.view, positioned: .below, relativeTo: poppingVC.view)
+		originalVC.addView(on: view, positioned: .below, relativeTo: poppingVC.view)
 		
-//		if animated {
-//			let endFrame = poppingVC.view.frame.offsetBy(dx: poppingVC.view.frame.width, dy: 0)
-//
-//			NSAnimationContext.runAnimationGroup { context in
-//				context.duration = 0.23
-//				context.allowsImplicitAnimation = true
-//				context.timingFunction = CAMediaTimingFunction(name: .easeIn)
-//				poppingVC.view.animator().frame = endFrame
-//				poppingVC.view.animator().alphaValue = 0.85
-//			} completionHandler: {
-//				self.removeChildViewController(poppingVC)
-//				self.didPopViewController(poppingVC)
-//				self.delegate?.stackNavigationController(self, didPop: poppingVC)
-//			}
-//		}
+		if animated {
+			let endFrame = poppingVC.view.frame.offsetBy(dx: poppingVC.view.frame.width, dy: 0)
+
+			NSAnimationContext.runAnimationGroup { context in
+				context.duration = 0.23
+				context.allowsImplicitAnimation = true
+				context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+				poppingVC.view.animator().frame = endFrame
+				poppingVC.view.animator().alphaValue = 0.85
+			} completionHandler: {
+				self.removeChildViewController(poppingVC)
+				self.didPopViewController(poppingVC)
+				self.delegate?.stackNavigationController?(self, didPop: poppingVC)
+			}
+		}
 		
 		removeChildViewController(poppingVC)
 		didPopViewController(poppingVC)
-		self.delegate?.stackNavigationController?(self, didPop: poppingVC)
+		delegate?.stackNavigationController?(self, didPop: poppingVC)
 		
 		return poppingVC
 	}
@@ -158,41 +180,41 @@ open class StackNavigationController: NSViewController {
 
 public extension NSViewController {
 	
-	private enum AssociatedObjectKey {
-		static var navigationController = "AAFD9B44-7C88-431F-B867-E64750AAB7F3 StackNavigationController"
-	}
+	// The great idea of using malloc(1) for the associatedObjectKey was taken from this Swift forum.
+	// https://forums.swift.org/t/handling-the-new-forming-unsaferawpointer-warning/65523/7
+	private static let StackNavigationController_associatedObjectKey = malloc(1)!
 	
 	var stackNavigationController: StackNavigationController? {
 		get {
-			StackNavigationController_AssociatedObject.value(from: self, forKey: &AssociatedObjectKey.navigationController)
+			value(forKey: Self.StackNavigationController_associatedObjectKey)
 		}
 		set {
-			StackNavigationController_AssociatedObject.setAssign(value: newValue, to: self, forKey: &AssociatedObjectKey.navigationController)
+			setAssign(value: newValue, forKey: Self.StackNavigationController_associatedObjectKey)
 		}
 	}
 	
 	func addView(on parentView: NSView, positioned place: NSWindow.OrderingMode? = nil, relativeTo otherView: NSView? = nil) {
 		if let place {
-			parentView.addSubview(self.view, positioned: place, relativeTo: otherView)
+			parentView.addSubview(view, positioned: place, relativeTo: otherView)
 		} else {
-			parentView.addSubview(self.view)
+			parentView.addSubview(view)
 		}
 		
 		self.view.translatesAutoresizingMaskIntoConstraints = false
 		let constraints = [
 			NSLayoutConstraint.constraints(withVisualFormat: "H:|-0-[v]-0-|",
 										   metrics: nil,
-										   views: ["v" : self.view]),
+										   views: ["v" : view]),
 			NSLayoutConstraint.constraints(withVisualFormat: "V:|-0-[v]-0-|",
 										   metrics: nil,
-										   views: ["v" : self.view])
+										   views: ["v" : view])
 		].flatMap { $0 }
 		NSLayoutConstraint.activate(constraints)
 	}
 	
 	func addChildViewController(_ vc: NSViewController, container: NSView? = nil) {
 		addChild(vc)
-		vc.addView(on: container ?? self.view)
+		vc.addView(on: container ?? view)
 	}
 	
 	func removeChildViewController(_ vc: NSViewController) {
@@ -202,31 +224,30 @@ public extension NSViewController {
 	
 }
 
-enum StackNavigationController_AssociatedObject {
+extension NSObject {
 	
-	static func value<T>(from object: AnyObject, forKey key: UnsafeRawPointer) -> T? {
-		objc_getAssociatedObject(object, key) as? T
+	func value<T>(forKey key: UnsafeRawPointer) -> T? {
+		objc_getAssociatedObject(self, key) as? T
 	}
 	
-	static func setAssign<T>(value: T?, to object: Any, forKey key: UnsafeRawPointer) {
-		objc_setAssociatedObject(object, key, value, .OBJC_ASSOCIATION_ASSIGN)
+	func setAssign<T>(value: T?, forKey key: UnsafeRawPointer) {
+		objc_setAssociatedObject(self, key, value, .OBJC_ASSOCIATION_ASSIGN)
 	}
 	
-	static func setRetainNonAtomic<T>(value: T?, to object: Any, forKey key: UnsafeRawPointer) {
-		objc_setAssociatedObject(object, key, value, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+	func setRetainNonAtomic<T>(value: T?, forKey key: UnsafeRawPointer) {
+		objc_setAssociatedObject(self, key, value, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 	}
 	
-	static func setCopyNonAtomic<T>(value: T?, to object: Any, forKey key: UnsafeRawPointer) {
-		objc_setAssociatedObject(object, key, value, .OBJC_ASSOCIATION_COPY_NONATOMIC)
+	func setCopyNonAtomic<T>(value: T?, forKey key: UnsafeRawPointer) {
+		objc_setAssociatedObject(self, key, value, .OBJC_ASSOCIATION_COPY_NONATOMIC)
 	}
 	
-	static func setRetain<T>(value: T?, to object: Any, forKey key: UnsafeRawPointer) {
-		objc_setAssociatedObject(object, key, value, .OBJC_ASSOCIATION_RETAIN)
+	func setRetain<T>(value: T?, forKey key: UnsafeRawPointer) {
+		objc_setAssociatedObject(self, key, value, .OBJC_ASSOCIATION_RETAIN)
 	}
 	
-	static func setCopy<T>(value: T?, to object: Any, forKey key: UnsafeRawPointer) {
-		objc_setAssociatedObject(object, key, value, .OBJC_ASSOCIATION_COPY)
+	func setCopy<T>(value: T?, forKey key: UnsafeRawPointer) {
+		objc_setAssociatedObject(self, key, value, .OBJC_ASSOCIATION_COPY)
 	}
 	
 }
-
