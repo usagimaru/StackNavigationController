@@ -6,7 +6,7 @@
 
 import Cocoa
 
-public class StackNavigationController: NSViewController {
+open class StackNavigationController: NSViewController {
 	
 	/// Current displayed view controller
 	open var topViewController: StackNavigationPageViewController? {
@@ -49,10 +49,10 @@ public class StackNavigationController: NSViewController {
 	
 	// To detect push/pop event without delegate, Override these in subclasses.
 	
-	public func willPushTransition(from: StackNavigationPageViewController?, to: StackNavigationPageViewController) {}
-	public func didPushTransition(from: StackNavigationPageViewController?, to: StackNavigationPageViewController) {}
-	public func willPopTransition(from: StackNavigationPageViewController, to: StackNavigationPageViewController?) {}
-	public func didPopTransition(from: StackNavigationPageViewController, to: StackNavigationPageViewController?) {}
+	open func willPushTransition(from: StackNavigationPageViewController?, to: StackNavigationPageViewController) {}
+	open func didPushTransition(from: StackNavigationPageViewController?, to: StackNavigationPageViewController) {}
+	open func willPopTransition(from: StackNavigationPageViewController, to: StackNavigationPageViewController?) {}
+	open func didPopTransition(from: StackNavigationPageViewController, to: StackNavigationPageViewController?) {}
 	
 	
 	// MARK: -
@@ -71,11 +71,11 @@ public class StackNavigationController: NSViewController {
 	}
 	
 	/// Push view controller
-	public func pushViewController(_ toVC: StackNavigationPageViewController,
-								   animated: Bool,
-								   duration: TimeInterval? = nil,
-								   timingFunction: CAMediaTimingFunction? = nil,
-								   completion: (() -> Void)? = nil) {
+	open func pushViewController(_ toVC: StackNavigationPageViewController,
+								 animated: Bool,
+								 duration: TimeInterval? = nil,
+								 timingFunction: CAMediaTimingFunction? = nil,
+								 completion: (() -> Void)? = nil) {
 		let fromVC = topViewController
 		
 		fromVC?.viewWillDisappear(by: self)
@@ -147,10 +147,10 @@ public class StackNavigationController: NSViewController {
 	
 	
 	/// Pop view controller
-	public func popViewController(animated: Bool,
-								  duration: TimeInterval? = nil,
-								  timingFunction: CAMediaTimingFunction? = nil,
-								  completion: (() -> Void)? = nil) {
+	open func popViewController(animated: Bool,
+								duration: TimeInterval? = nil,
+								timingFunction: CAMediaTimingFunction? = nil,
+								completion: (() -> Void)? = nil) {
 		guard canPop, let fromVC = viewControllers.popLast(), let toVC = viewControllers.last
 		else { return }
 		
@@ -233,7 +233,7 @@ public protocol StackNavigationControllerDelegate: AnyObject {
 
 // MARK: -
 
-public class StackNavigationView: NSView {
+open class StackNavigationView: NSView {
 	
 	/// Prevents user interactions
 	open var preventsUserInteractions: Bool = false
@@ -248,11 +248,11 @@ public class StackNavigationView: NSView {
 		setup()
 	}
 	
-	public func setup() {
+	open func setup() {
 		wantsLayer = true
 	}
 	
-	public override func hitTest(_ point: NSPoint) -> NSView? {
+	open override func hitTest(_ point: NSPoint) -> NSView? {
 		if preventsUserInteractions {
 			return nil
 		}
@@ -264,17 +264,17 @@ public class StackNavigationView: NSView {
 
 // MARK: -
 
-public class StackNavigationCurtainView: NSView {
+open class StackNavigationCurtainView: NSView {
 	
-	static var defaultCurtainViewAlphaValue: CGFloat {
+	public static var defaultCurtainViewAlphaValue: CGFloat {
 		0.25
 	}
 	
-	func setAlphaAsDefault() {
+	open func setAlphaAsDefault() {
 		alphaValue = Self.defaultCurtainViewAlphaValue
 	}
 	
-	func setAlphaAsZero() {
+	open func setAlphaAsZero() {
 		alphaValue = 0
 	}
 	
