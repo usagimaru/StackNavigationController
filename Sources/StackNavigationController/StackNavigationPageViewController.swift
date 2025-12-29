@@ -6,6 +6,18 @@
 
 import Cocoa
 
+/// You can use this skeleton class to implement a custom page view controller with subclassing
+public class StackNavigationPlainPageViewController: NSViewController, StackNavigationPageViewController {
+	
+	public weak var stackNavigationController: StackNavigationController?
+	
+	public func viewWillAppear(by stackNavigationController: StackNavigationController) {}
+	public func viewDidAppear(by stackNavigationController: StackNavigationController) {}
+	public func viewWillDisappear(by stackNavigationController: StackNavigationController) {}
+	public func viewDidDisappear(by stackNavigationController: StackNavigationController) {}
+	
+}
+
 /// Protocol of a page view controller for StackNavigationController
 public protocol StackNavigationPageViewController: NSViewController {
 	

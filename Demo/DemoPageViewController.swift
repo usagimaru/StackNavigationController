@@ -7,7 +7,7 @@
 
 import Cocoa
 
-class DemoPageViewController: NSViewController, StackNavigationPageViewController {
+class DemoPageViewController: StackNavigationPlainPageViewController {
 	
 	@IBOutlet var label: NSTextField!
 	@IBOutlet var button: NSButton!
@@ -55,22 +55,20 @@ class DemoPageViewController: NSViewController, StackNavigationPageViewControlle
 	
 	// MARK: - StackNavigationPageViewController
 	
-	weak var stackNavigationController: StackNavigationController?
-	
-	func viewWillAppear(by stackNavigationController: StackNavigationController) {
+	override func viewWillAppear(by stackNavigationController: StackNavigationController) {
 		
 	}
 	
-	func viewDidAppear(by stackNavigationController: StackNavigationController) {
+	override func viewDidAppear(by stackNavigationController: StackNavigationController) {
 		view.window?.makeFirstResponder(button)
 		print(String(describing: Self.self), #function)
 	}
 	
-	func viewWillDisappear(by stackNavigationController: StackNavigationController) {
+	override func viewWillDisappear(by stackNavigationController: StackNavigationController) {
 		
 	}
 	
-	func viewDidDisappear(by stackNavigationController: StackNavigationController) {
+	override func viewDidDisappear(by stackNavigationController: StackNavigationController) {
 		
 	}
 
