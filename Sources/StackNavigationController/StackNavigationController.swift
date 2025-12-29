@@ -5,26 +5,16 @@
 //
 
 import Cocoa
-import ObjectiveC
-
-@objc public protocol StackNavigationControllerDelegate: AnyObject {
-	
-	@objc optional func stackNavigationController(_ navi: StackNavigationController, willPush viewController: NSViewController, current: NSViewController?)
-	@objc optional func stackNavigationController(_ navi: StackNavigationController, didPush viewController: NSViewController)
-	@objc optional func stackNavigationController(_ navi: StackNavigationController, willPop viewController: NSViewController, next: NSViewController?)
-	@objc optional func stackNavigationController(_ navi: StackNavigationController, didPop viewController: NSViewController)
-	
-}
 
 public class StackNavigationController: NSViewController {
 	
 	/// Current displayed view controller
-	open var topViewController: NSViewController? {
+	open var topViewController: StackNavigationPageViewController? {
 		viewControllers.last
 	}
 	
 	/// View controller at the first
-	open var rootViewController: NSViewController? {
+	open var rootViewController: StackNavigationPageViewController? {
 		viewControllers.first
 	}
 	
@@ -37,140 +27,236 @@ public class StackNavigationController: NSViewController {
 		viewControllers.count > 1
 	}
 	
+	/// Insert a black curtain view onto the source view when transiting with animation
+	open var isShadowCurtainEnabled: Bool = true
+	
+	/// Prevents user interactions when view is animating
+	open var preventsUserInteractionsWhenAnimating: Bool = false
+	
+	/// StackNavigationControllerDelegate
 	open weak var delegate: StackNavigationControllerDelegate?
 	
 	/// View controller stack
-	open private(set) var viewControllers: [NSViewController] = []
+	open private(set) var viewControllers: [StackNavigationPageViewController] = []
+	
+	/// Default animation duration
+	static var defaultAnimationDuration: TimeInterval {
+		0.65
+	}
 	
 	
 	// MARK: -
 	
 	// To detect push/pop event without delegate, Override these in subclasses.
 	
-	public func willPushViewController(_: NSViewController, current: NSViewController?) {}
-	public func didPushViewController(_: NSViewController) {}
-	public func willPopViewController(_: NSViewController, next: NSViewController?) {}
-	public func didPopViewController(_: NSViewController) {}
+	public func willPushTransition(from: StackNavigationPageViewController?, to: StackNavigationPageViewController) {}
+	public func didPushTransition(from: StackNavigationPageViewController?, to: StackNavigationPageViewController) {}
+	public func willPopTransition(from: StackNavigationPageViewController, to: StackNavigationPageViewController?) {}
+	public func didPopTransition(from: StackNavigationPageViewController, to: StackNavigationPageViewController?) {}
 	
 	
 	// MARK: -
 	
-	override open func loadView() {
-		view = NSView()
-		view.wantsLayer = true
-	}
-	
-	public init(rootViewController: NSViewController) {
+	public init(rootViewController: StackNavigationPageViewController) {
 		super.init(nibName: nil, bundle: nil)
-		pushViewController(rootViewController)
+		pushViewController(rootViewController, animated: false)
 	}
 	
 	public required init?(coder: NSCoder) {
 		super.init(coder: coder)
 	}
 	
-	/// Pushing view controller without animation.
-	public func pushViewController(_ pushingViewController: NSViewController) {
-		pushViewController(pushingViewController, animated: false)
+	override open func loadView() {
+		view = StackNavigationView()
 	}
 	
-	/// Pushing view controller with animation.
-	/// I think animating is not getting good usability and not good feeling. We should respect standard macOS experiences.
-	public func pushViewControllerWithAnimation(_ pushingViewController: NSViewController) {
-		pushViewController(pushingViewController, animated: true)
-	}
-	
-	private func pushViewController(_ pushingViewController: NSViewController, animated: Bool) {
-		let previousVC = topViewController
-		pushingViewController.stackNavigationController = self
+	/// Push view controller
+	public func pushViewController(_ toVC: StackNavigationPageViewController,
+								   animated: Bool,
+								   duration: TimeInterval? = nil,
+								   timingFunction: CAMediaTimingFunction? = nil,
+								   completion: (() -> Void)? = nil) {
+		let fromVC = topViewController
 		
-		if animated {
-			pushingViewController.view.wantsLayer = true
+		fromVC?.viewWillDisappear(by: self)
+		toVC.viewWillAppear(by: self)
+		
+		willPushTransition(from: fromVC, to: toVC)
+		delegate?.stackNavigationController(self,willPushTransition: fromVC, to: toVC)
+		
+		toVC.stackNavigationController = self
+		viewControllers.append(toVC)
+		addChild(toVC)
+		view.addSubview(toVC.view)
+		
+		if let fromVC, animated {
+			// With animation
 			
-			if let previousVC, animated {
-				addChildViewController(pushingViewController)
-				
-				let endFrame = previousVC.view.frame
-				let startFrame = endFrame.offsetBy(dx: endFrame.width, dy: 0)
-				pushingViewController.view.frame = startFrame
-				pushingViewController.view.alphaValue = 0.85
-				
-				viewControllers.append(pushingViewController)
-				
-				NSAnimationContext.runAnimationGroup { context in
-					context.duration = 0.2
-					context.allowsImplicitAnimation = true
-					context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-					pushingViewController.view.animator().frame = endFrame
-					pushingViewController.view.animator().alphaValue = 1
-					previousVC.view.animator().alphaValue = 0.25
-				} completionHandler: {
-					previousVC.view.alphaValue = 1
-					previousVC.view.removeFromSuperview()
+			var initialFrame = view.bounds
+			initialFrame.origin.x = initialFrame.width
+			toVC.view.frame = initialFrame
+			
+			// Curtain view
+			let curtainView = isShadowCurtainEnabled ? fromVC.setCurtain() : nil
+			curtainView?.setAlphaAsZero()
+			
+			// User interaction state
+			if preventsUserInteractionsWhenAnimating {
+				(view as? StackNavigationView)?.preventsUserInteractions = true
+			}
+			
+			NSAnimationContext.runAnimationGroup { context in
+				context.duration = duration ?? Self.defaultAnimationDuration
+				context.allowsImplicitAnimation = true
+				context.timingFunction = timingFunction ?? CAMediaTimingFunction.easeOutQuint()
+				context.completionHandler = {
+					fromVC.view.removeFromSuperview()
 					
-					self.didPushViewController(pushingViewController)
-					self.delegate?.stackNavigationController?(self, didPush: pushingViewController)
+					// Reset curtain and user interaction state
+					fromVC.removeCurtain()
+					(self.view as? StackNavigationView)?.preventsUserInteractions = false
+					
+					fromVC.viewDidDisappear(by: self)
+					toVC.viewDidAppear(by: self)
+					
+					completion?()
+					
+					self.didPushTransition(from: fromVC, to: toVC)
+					self.delegate?.stackNavigationController(self, didPushTransition: fromVC, to: toVC)
 				}
+				
+				toVC.view.animator().frame = view.bounds
+				curtainView?.animator().alphaValue = StackNavigationCurtainView.defaultCurtainViewAlphaValue
 			}
 		}
-		
-		willPushViewController(pushingViewController, current: previousVC)
-		delegate?.stackNavigationController?(self, willPush: pushingViewController, current: previousVC)
-		
-		addChildViewController(pushingViewController)
-		viewControllers.append(pushingViewController)
-		
-		previousVC?.view.removeFromSuperview()
-		
-		didPushViewController(pushingViewController)
-		delegate?.stackNavigationController?(self, didPush: pushingViewController)
+		else {
+			// No animation
+			
+			fromVC?.view.removeFromSuperview()
+			toVC.view.frame = view.bounds
+			
+			fromVC?.viewDidDisappear(by: self)
+			toVC.viewDidAppear(by: self)
+			
+			completion?()
+			
+			didPushTransition(from: fromVC, to: toVC)
+			delegate?.stackNavigationController(self, didPushTransition: fromVC, to: toVC)
+		}
 	}
 	
 	
-	/// Popping view controller without animation.
-	@discardableResult
-	public func popViewController() -> NSViewController? {
-		popViewController(animated: false)
-	}
-	
-	/// Popping view controller with animation.
-	/// I think animating is not getting good usability and not good feeling. We should respect standard macOS experiences.
-	@discardableResult
-	public func popViewControllerWithAnimation() -> NSViewController? {
-		popViewController(animated: true)
-	}
-	
-	@discardableResult
-	private func popViewController(animated: Bool) -> NSViewController? {
-		guard canPop, let poppingVC = viewControllers.popLast(), let originalVC = topViewController
-		else { return nil }
+	/// Pop view controller
+	public func popViewController(animated: Bool,
+								  duration: TimeInterval? = nil,
+								  timingFunction: CAMediaTimingFunction? = nil,
+								  completion: (() -> Void)? = nil) {
+		guard canPop, let fromVC = viewControllers.popLast(), let toVC = viewControllers.last
+		else { return }
 		
-		willPopViewController(poppingVC, next: viewControllers.last)
-		delegate?.stackNavigationController?(self, willPop: poppingVC, next: viewControllers.last)
+		fromVC.viewWillDisappear(by: self)
+		toVC.viewWillAppear(by: self)
 		
-		originalVC.addView(on: view, positioned: .below, relativeTo: poppingVC.view)
+		willPopTransition(from: fromVC, to: toVC)
+		delegate?.stackNavigationController(self, willPopTransition: fromVC, to: toVC)
 		
 		if animated {
-			let endFrame = poppingVC.view.frame.offsetBy(dx: poppingVC.view.frame.width, dy: 0)
-
+			view.addSubview(toVC.view, positioned: .below, relativeTo: fromVC.view)
+			toVC.view.frame = view.bounds
+			
+			// Curtain view
+			let curtainView = isShadowCurtainEnabled ? toVC.setCurtain() : nil
+			curtainView?.setAlphaAsDefault()
+			
+			// User interaction state
+			if preventsUserInteractionsWhenAnimating {
+				(view as? StackNavigationView)?.preventsUserInteractions = true
+			}
+			
 			NSAnimationContext.runAnimationGroup { context in
-				context.duration = 0.23
+				context.duration = duration ?? Self.defaultAnimationDuration
 				context.allowsImplicitAnimation = true
-				context.timingFunction = CAMediaTimingFunction(name: .easeIn)
-				poppingVC.view.animator().frame = endFrame
-				poppingVC.view.animator().alphaValue = 0.85
-			} completionHandler: {
-				self.removeChildViewController(poppingVC)
-				self.didPopViewController(poppingVC)
-				self.delegate?.stackNavigationController?(self, didPop: poppingVC)
+				context.timingFunction = timingFunction ?? CAMediaTimingFunction.easeOutQuint()
+				context.completionHandler = {
+					fromVC.view.removeFromSuperview()
+					fromVC.removeFromParent()
+					
+					// Reset curtain and user interaction state
+					toVC.removeCurtain()
+					(self.view as? StackNavigationView)?.preventsUserInteractions = false
+					
+					fromVC.viewDidDisappear(by: self)
+					toVC.viewDidAppear(by: self)
+					
+					completion?()
+					
+					self.didPopTransition(from: fromVC, to: toVC)
+					self.delegate?.stackNavigationController(self, didPopTransition: fromVC, to: toVC)
+				}
+				
+				var newFrame = view.bounds
+				newFrame.origin.x = newFrame.width
+				fromVC.view.animator().frame = newFrame
+				curtainView?.animator().alphaValue = 0.0
 			}
 		}
-		
-		removeChildViewController(poppingVC)
-		didPopViewController(poppingVC)
-		delegate?.stackNavigationController?(self, didPop: poppingVC)
-		
-		return poppingVC
+		else {
+			// No animation
+			
+			view.addSubview(toVC.view, positioned: .below, relativeTo: fromVC.view)
+			toVC.view.frame = view.bounds
+			
+			fromVC.view.removeFromSuperview()
+			fromVC.removeFromParent()
+			
+			fromVC.viewDidDisappear(by: self)
+			toVC.viewDidAppear(by: self)
+			
+			completion?()
+			
+			didPopTransition(from: fromVC, to: toVC)
+			delegate?.stackNavigationController(self, didPopTransition: fromVC, to: toVC)
+		}
+	}
+	
+}
+
+public protocol StackNavigationControllerDelegate: AnyObject {
+	
+	func stackNavigationController(_ navi: StackNavigationController, willPushTransition from: StackNavigationPageViewController?, to: StackNavigationPageViewController)
+	func stackNavigationController(_ navi: StackNavigationController, didPushTransition from: StackNavigationPageViewController?, to: StackNavigationPageViewController)
+	func stackNavigationController(_ navi: StackNavigationController, willPopTransition from: StackNavigationPageViewController, to: StackNavigationPageViewController?)
+	func stackNavigationController(_ navi: StackNavigationController, didPopTransition from: StackNavigationPageViewController, to: StackNavigationPageViewController?)
+	
+}
+
+
+// MARK: -
+
+public class StackNavigationView: NSView {
+	
+	/// Prevents user interactions
+	open var preventsUserInteractions: Bool = false
+	
+	public override init(frame frameRect: NSRect) {
+		super.init(frame: frameRect)
+		setup()
+	}
+	
+	public required init?(coder: NSCoder) {
+		super.init(coder: coder)
+		setup()
+	}
+	
+	public func setup() {
+		wantsLayer = true
+	}
+	
+	public override func hitTest(_ point: NSPoint) -> NSView? {
+		if preventsUserInteractions {
+			return nil
+		}
+		return super.hitTest(point)
 	}
 	
 }
@@ -178,76 +264,30 @@ public class StackNavigationController: NSViewController {
 
 // MARK: -
 
-public extension NSViewController {
+public class StackNavigationCurtainView: NSView {
 	
-	// The great idea of using malloc(1) for the associatedObjectKey was taken from this Swift forum.
-	// https://forums.swift.org/t/handling-the-new-forming-unsaferawpointer-warning/65523/7
-	private static let StackNavigationController_associatedObjectKey = malloc(1)!
-	
-	var stackNavigationController: StackNavigationController? {
-		get {
-			value(forKey: Self.StackNavigationController_associatedObjectKey)
-		}
-		set {
-			setAssign(value: newValue, forKey: Self.StackNavigationController_associatedObjectKey)
-		}
+	static var defaultCurtainViewAlphaValue: CGFloat {
+		0.25
 	}
 	
-	func addView(on parentView: NSView, positioned place: NSWindow.OrderingMode? = nil, relativeTo otherView: NSView? = nil) {
-		if let place {
-			parentView.addSubview(view, positioned: place, relativeTo: otherView)
-		} else {
-			parentView.addSubview(view)
-		}
-		
-		self.view.translatesAutoresizingMaskIntoConstraints = false
-		let constraints = [
-			NSLayoutConstraint.constraints(withVisualFormat: "H:|-0-[v]-0-|",
-										   metrics: nil,
-										   views: ["v" : view]),
-			NSLayoutConstraint.constraints(withVisualFormat: "V:|-0-[v]-0-|",
-										   metrics: nil,
-										   views: ["v" : view])
-		].flatMap { $0 }
-		NSLayoutConstraint.activate(constraints)
+	func setAlphaAsDefault() {
+		alphaValue = Self.defaultCurtainViewAlphaValue
 	}
 	
-	func addChildViewController(_ vc: NSViewController, container: NSView? = nil) {
-		addChild(vc)
-		vc.addView(on: container ?? view)
-	}
-	
-	func removeChildViewController(_ vc: NSViewController) {
-		vc.view.removeFromSuperview()
-		vc.removeFromParent()
+	func setAlphaAsZero() {
+		alphaValue = 0
 	}
 	
 }
 
-extension NSObject {
-	
-	func value<T>(forKey key: UnsafeRawPointer) -> T? {
-		objc_getAssociatedObject(self, key) as? T
+
+// MARK: -
+
+internal extension CAMediaTimingFunction {
+	static func easeInQuint() -> CAMediaTimingFunction {
+		return CAMediaTimingFunction(controlPoints: 0.64, 0, 0.78, 0)
 	}
-	
-	func setAssign<T>(value: T?, forKey key: UnsafeRawPointer) {
-		objc_setAssociatedObject(self, key, value, .OBJC_ASSOCIATION_ASSIGN)
+	static func easeOutQuint() -> CAMediaTimingFunction {
+		return CAMediaTimingFunction(controlPoints: 0.22, 1, 0.36, 1)
 	}
-	
-	func setRetainNonAtomic<T>(value: T?, forKey key: UnsafeRawPointer) {
-		objc_setAssociatedObject(self, key, value, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-	}
-	
-	func setCopyNonAtomic<T>(value: T?, forKey key: UnsafeRawPointer) {
-		objc_setAssociatedObject(self, key, value, .OBJC_ASSOCIATION_COPY_NONATOMIC)
-	}
-	
-	func setRetain<T>(value: T?, forKey key: UnsafeRawPointer) {
-		objc_setAssociatedObject(self, key, value, .OBJC_ASSOCIATION_RETAIN)
-	}
-	
-	func setCopy<T>(value: T?, forKey key: UnsafeRawPointer) {
-		objc_setAssociatedObject(self, key, value, .OBJC_ASSOCIATION_COPY)
-	}
-	
 }

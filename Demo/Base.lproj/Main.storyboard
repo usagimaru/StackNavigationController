@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="22505" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="B8D-0N-5wS">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -177,8 +177,8 @@
         <!--Window Controller-->
         <scene sceneID="R2V-B0-nI4">
             <objects>
-                <windowController storyboardIdentifier="WindowController" id="B8D-0N-5wS" customClass="WindowController" customModule="StackNavigationController" customModuleProvider="target" sceneMemberID="viewController">
-                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="IQv-IB-iLA">
+                <windowController storyboardIdentifier="DemoWindowController" id="B8D-0N-5wS" customClass="DemoWindowController" customModule="StackNavigationController" customModuleProvider="target" sceneMemberID="viewController">
+                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" releasedWhenClosed="NO" animationBehavior="default" id="IQv-IB-iLA">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
                         <windowCollectionBehavior key="collectionBehavior" fullScreenAuxiliary="YES"/>
                         <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
@@ -186,7 +186,7 @@
                         <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
                         <value key="minSize" type="size" width="480" height="270"/>
                         <value key="maxSize" type="size" width="480" height="270"/>
-                        <toolbar key="toolbar" implicitIdentifier="C74E8FCE-DFF6-41AA-9F9B-F75C72DEC49A" autosavesConfiguration="NO" displayMode="iconAndLabel" sizeMode="regular" id="76I-uZ-pGf">
+                        <toolbar key="toolbar" implicitIdentifier="C74E8FCE-DFF6-41AA-9F9B-F75C72DEC49A" autosavesConfiguration="NO" showsBaselineSeparator="NO" displayMode="iconAndLabel" sizeMode="regular" id="76I-uZ-pGf">
                             <allowedToolbarItems>
                                 <toolbarItem implicitItemIdentifier="NSToolbarSpaceItem" id="93J-kk-ssi"/>
                                 <toolbarItem implicitItemIdentifier="NSToolbarFlexibleSpaceItem" id="cuw-qA-hoE"/>
@@ -222,10 +222,10 @@
             </objects>
             <point key="canvasLocation" x="75" y="655"/>
         </scene>
-        <!--View Controller-->
+        <!--Demo Page View Controller-->
         <scene sceneID="Tdj-bG-TCP">
             <objects>
-                <viewController storyboardIdentifier="ViewController" id="ifo-JH-xud" customClass="ViewController" customModule="StackNavigationController" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="DemoPageViewController" id="ifo-JH-xud" customClass="DemoPageViewController" customModule="StackNavigationController" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="q1b-Th-Shf">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -239,11 +239,14 @@
                                 </textFieldCell>
                             </textField>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="PkI-XF-iEi">
-                                <rect key="frame" x="194" y="43" width="63" height="32"/>
+                                <rect key="frame" x="188" y="43" width="74" height="32"/>
                                 <buttonCell key="cell" type="push" title="Next" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="AfL-KD-Pc5">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
+                                <constraints>
+                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="60" id="bZj-w0-OlJ"/>
+                                </constraints>
                                 <connections>
                                     <action selector="nextAction:" target="ifo-JH-xud" id="Lx2-ks-v2H"/>
                                 </connections>
@@ -263,7 +266,7 @@
                 </viewController>
                 <customObject id="EUx-hb-tsn" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="60" y="1090"/>
+            <point key="canvasLocation" x="611" y="670"/>
         </scene>
     </scenes>
     <resources>
