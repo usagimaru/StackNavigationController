@@ -8,6 +8,17 @@ import Cocoa
 
 open class StackNavigationController: NSViewController {
 	
+	/// Transition type
+	public enum TransitionType {
+		case push
+		case pop
+	}
+	
+	/// Equal to `self.view`
+	public var contentView: StackNavigationView {
+		view as! StackNavigationView
+	}
+	
 	/// Current displayed view controller
 	open var topViewController: StackNavigationPageViewController? {
 		viewControllers.last
@@ -47,12 +58,10 @@ open class StackNavigationController: NSViewController {
 	
 	// MARK: -
 	
-	// To detect push/pop event without delegate, Override these in subclasses.
+	// To detect transition events without delegate, Override these in subclasses.
 	
-	open func willPushTransition(from: StackNavigationPageViewController?, to: StackNavigationPageViewController) {}
-	open func didPushTransition(from: StackNavigationPageViewController?, to: StackNavigationPageViewController) {}
-	open func willPopTransition(from: StackNavigationPageViewController, to: StackNavigationPageViewController?) {}
-	open func didPopTransition(from: StackNavigationPageViewController, to: StackNavigationPageViewController?) {}
+	open func willMove(from: StackNavigationPageViewController?, to: StackNavigationPageViewController, type: TransitionType) {}
+	open func didMove(from: StackNavigationPageViewController?, to: StackNavigationPageViewController, type: TransitionType) {}
 	
 	
 	// MARK: -
@@ -77,12 +86,13 @@ open class StackNavigationController: NSViewController {
 								 timingFunction: CAMediaTimingFunction? = nil,
 								 completion: (() -> Void)? = nil) {
 		let fromVC = topViewController
+		let transition: TransitionType = .push
 		
 		fromVC?.viewWillDisappear(by: self)
 		toVC.viewWillAppear(by: self)
 		
-		willPushTransition(from: fromVC, to: toVC)
-		delegate?.stackNavigationController(self,willPushTransition: fromVC, to: toVC)
+		willMove(from: fromVC, to: toVC, type: .push)
+		delegate?.stackNavigationController(self, willMove: fromVC, to: toVC, type: transition)
 		
 		toVC.stackNavigationController = self
 		viewControllers.append(toVC)
@@ -102,7 +112,7 @@ open class StackNavigationController: NSViewController {
 			
 			// User interaction state
 			if preventsUserInteractionsWhenAnimating {
-				(view as? StackNavigationView)?.preventsUserInteractions = true
+				contentView.preventsUserInteractions = true
 			}
 			
 			NSAnimationContext.runAnimationGroup { context in
@@ -114,15 +124,15 @@ open class StackNavigationController: NSViewController {
 					
 					// Reset curtain and user interaction state
 					fromVC.removeCurtain()
-					(self.view as? StackNavigationView)?.preventsUserInteractions = false
+					self.contentView.preventsUserInteractions = false
 					
 					fromVC.viewDidDisappear(by: self)
 					toVC.viewDidAppear(by: self)
 					
 					completion?()
 					
-					self.didPushTransition(from: fromVC, to: toVC)
-					self.delegate?.stackNavigationController(self, didPushTransition: fromVC, to: toVC)
+					self.didMove(from: fromVC, to: toVC, type: transition)
+					self.delegate?.stackNavigationController(self, didMove: fromVC, to: toVC, type: transition)
 				}
 				
 				toVC.view.animator().frame = view.bounds
@@ -140,8 +150,8 @@ open class StackNavigationController: NSViewController {
 			
 			completion?()
 			
-			didPushTransition(from: fromVC, to: toVC)
-			delegate?.stackNavigationController(self, didPushTransition: fromVC, to: toVC)
+			didMove(from: fromVC, to: toVC, type: transition)
+			delegate?.stackNavigationController(self, didMove: fromVC, to: toVC, type: transition)
 		}
 	}
 	
@@ -154,11 +164,13 @@ open class StackNavigationController: NSViewController {
 		guard canPop, let fromVC = viewControllers.popLast(), let toVC = viewControllers.last
 		else { return }
 		
+		let transition: TransitionType = .pop
+		
 		fromVC.viewWillDisappear(by: self)
 		toVC.viewWillAppear(by: self)
 		
-		willPopTransition(from: fromVC, to: toVC)
-		delegate?.stackNavigationController(self, willPopTransition: fromVC, to: toVC)
+		willMove(from: fromVC, to: toVC, type: transition)
+		delegate?.stackNavigationController(self, willMove: fromVC, to: toVC, type: transition)
 		
 		if animated {
 			view.addSubview(toVC.view, positioned: .below, relativeTo: fromVC.view)
@@ -170,7 +182,7 @@ open class StackNavigationController: NSViewController {
 			
 			// User interaction state
 			if preventsUserInteractionsWhenAnimating {
-				(view as? StackNavigationView)?.preventsUserInteractions = true
+				contentView.preventsUserInteractions = true
 			}
 			
 			NSAnimationContext.runAnimationGroup { context in
@@ -183,15 +195,15 @@ open class StackNavigationController: NSViewController {
 					
 					// Reset curtain and user interaction state
 					toVC.removeCurtain()
-					(self.view as? StackNavigationView)?.preventsUserInteractions = false
+					self.contentView.preventsUserInteractions = false
 					
 					fromVC.viewDidDisappear(by: self)
 					toVC.viewDidAppear(by: self)
 					
 					completion?()
 					
-					self.didPopTransition(from: fromVC, to: toVC)
-					self.delegate?.stackNavigationController(self, didPopTransition: fromVC, to: toVC)
+					self.didMove(from: fromVC, to: toVC, type: transition)
+					self.delegate?.stackNavigationController(self, didMove: fromVC, to: toVC, type: transition)
 				}
 				
 				var newFrame = view.bounds
@@ -214,8 +226,8 @@ open class StackNavigationController: NSViewController {
 			
 			completion?()
 			
-			didPopTransition(from: fromVC, to: toVC)
-			delegate?.stackNavigationController(self, didPopTransition: fromVC, to: toVC)
+			didMove(from: fromVC, to: toVC, type: transition)
+			delegate?.stackNavigationController(self, didMove: fromVC, to: toVC, type: transition)
 		}
 	}
 	
@@ -223,10 +235,8 @@ open class StackNavigationController: NSViewController {
 
 public protocol StackNavigationControllerDelegate: AnyObject {
 	
-	func stackNavigationController(_ navi: StackNavigationController, willPushTransition from: StackNavigationPageViewController?, to: StackNavigationPageViewController)
-	func stackNavigationController(_ navi: StackNavigationController, didPushTransition from: StackNavigationPageViewController?, to: StackNavigationPageViewController)
-	func stackNavigationController(_ navi: StackNavigationController, willPopTransition from: StackNavigationPageViewController, to: StackNavigationPageViewController?)
-	func stackNavigationController(_ navi: StackNavigationController, didPopTransition from: StackNavigationPageViewController, to: StackNavigationPageViewController?)
+	func stackNavigationController(_ navi: StackNavigationController, willMove from: StackNavigationPageViewController?, to: StackNavigationPageViewController, type: StackNavigationController.TransitionType)
+	func stackNavigationController(_ navi: StackNavigationController, didMove from: StackNavigationPageViewController?, to: StackNavigationPageViewController, type: StackNavigationController.TransitionType)
 	
 }
 

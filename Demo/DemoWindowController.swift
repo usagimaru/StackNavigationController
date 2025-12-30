@@ -125,21 +125,12 @@ class DemoWindowController: NSWindowController,
 	
 	// MARK: - StackNavigationControllerDelegate
 	
-	func stackNavigationController(_ navi: StackNavigationController, willPushTransition from: StackNavigationPageViewController?, to: StackNavigationPageViewController) {
-		print(#function, "\n  [Pushing (will)]: '\(from?.title ?? "(none)")' -> '\(to.title ?? "(none)")'")
+	func stackNavigationController(_ navi: StackNavigationController, willMove from: (any StackNavigationPageViewController)?, to: (any StackNavigationPageViewController), type: StackNavigationController.TransitionType) {
+		print(#function, "\n  [Will \(type == .push ? "push" : "pop")]: '\(from?.title ?? "(none)")' -> '\(to.title ?? "(none)")'")
 	}
 	
-	func stackNavigationController(_ navi: StackNavigationController, didPushTransition from: StackNavigationPageViewController?, to: StackNavigationPageViewController) {
-		print(#function, "\n  [Pushing (did)]: '\(from?.title ?? "(none)")' -> '\(to.title ?? "(none)")'")
-		toolbar.validateVisibleItems()
-	}
-	
-	func stackNavigationController(_ navi: StackNavigationController, willPopTransition from: StackNavigationPageViewController, to: StackNavigationPageViewController?) {
-		print(#function, "\n  [Popping (will)]: '\(from.title ?? "(none)")' -> '\(to?.title ?? "(none)")'")
-	}
-	
-	func stackNavigationController(_ navi: StackNavigationController, didPopTransition from: StackNavigationPageViewController, to: StackNavigationPageViewController?) {
-		print(#function, "\n  [Popping (did)]: '\(from.title ?? "(none)")' -> '\(to?.title ?? "(none)")'")
+	func stackNavigationController(_ navi: StackNavigationController, didMove from: (any StackNavigationPageViewController)?, to: (any StackNavigationPageViewController), type: StackNavigationController.TransitionType) {
+		print(#function, "\n  [Did \(type == .push ? "push" : "pop")]: '\(from?.title ?? "(none)")' -> '\(to.title ?? "(none)")'")
 		toolbar.validateVisibleItems()
 	}
 
