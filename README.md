@@ -4,6 +4,8 @@ A lightweignt page-based navigation container like UINavigationController for ma
 
 [License](./LICENSE)
 
+<img src="./demo.gif" width=500>
+
 
 ## Usage
 
