@@ -40,7 +40,7 @@ open class StackNavigationController: NSViewController {
 	open private(set) var viewControllers: [StackNavigationPageViewController] = []
 	
 	/// Default animation duration
-	static var defaultAnimationDuration: TimeInterval {
+	public static var defaultAnimationDuration: TimeInterval {
 		0.65
 	}
 	
@@ -283,7 +283,7 @@ open class StackNavigationCurtainView: NSView {
 
 // MARK: -
 
-internal extension CAMediaTimingFunction {
+fileprivate extension CAMediaTimingFunction {
 	static func easeInQuint() -> CAMediaTimingFunction {
 		return CAMediaTimingFunction(controlPoints: 0.64, 0, 0.78, 0)
 	}
