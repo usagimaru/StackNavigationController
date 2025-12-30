@@ -19,6 +19,7 @@ class DemoPageViewController: StackNavigationPlainPageViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		label.stringValue = String(localized: "Next")
+		button.controlSize = .large
 	}
 	
 	func setRandomBackgroundColor() {
@@ -61,7 +62,6 @@ class DemoPageViewController: StackNavigationPlainPageViewController {
 	
 	override func viewDidAppear(by stackNavigationController: StackNavigationController) {
 		view.window?.makeFirstResponder(button)
-		print(String(describing: Self.self), #function)
 	}
 	
 	override func viewWillDisappear(by stackNavigationController: StackNavigationController) {

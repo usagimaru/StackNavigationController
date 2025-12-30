@@ -50,6 +50,9 @@ open class StackNavigationController: NSViewController {
 	/// View controller stack
 	open private(set) var viewControllers: [StackNavigationPageViewController] = []
 	
+	/// Transition state
+	public var isInTransition: Bool = false
+	
 	/// Default animation duration
 	public static var defaultAnimationDuration: TimeInterval {
 		0.65
@@ -93,6 +96,8 @@ open class StackNavigationController: NSViewController {
 		let fromVC = topViewController
 		let transition: TransitionType = .push
 		
+		isInTransition = true
+		
 		fromVC?.viewWillDisappear(by: self)
 		toVC.viewWillAppear(by: self)
 		
@@ -107,9 +112,16 @@ open class StackNavigationController: NSViewController {
 		if let fromVC, animated {
 			// With animation
 			
-			var initialFrame = view.bounds
-			initialFrame.origin.x = initialFrame.width
-			toVC.view.frame = initialFrame
+			let initialFrame_to = NSRect(x: view.bounds.width,
+										 y: view.bounds.minY,
+										 width: view.bounds.width,
+										 height: view.bounds.height)
+			let destFrame_from = NSRect(x: -view.bounds.width / 4,
+										y: view.bounds.minY,
+										width: view.bounds.width,
+										height: view.bounds.height)
+			
+			toVC.view.frame = initialFrame_to
 			
 			// Curtain view
 			let curtainView = isShadowCurtainEnabled ? fromVC.setCurtain() : nil
@@ -130,6 +142,7 @@ open class StackNavigationController: NSViewController {
 					// Reset curtain and user interaction state
 					fromVC.removeCurtain()
 					self.contentView.preventsUserInteractions = false
+					self.isInTransition = false
 					
 					fromVC.viewDidDisappear(by: self)
 					toVC.viewDidAppear(by: self)
@@ -140,6 +153,7 @@ open class StackNavigationController: NSViewController {
 					self.delegate?.stackNavigationController(self, didMove: fromVC, to: toVC, type: transition)
 				}
 				
+				fromVC.view.animator().frame = destFrame_from
 				toVC.view.animator().frame = view.bounds
 				curtainView?.animator().alphaValue = StackNavigationCurtainView.defaultCurtainViewAlphaValue
 			}
@@ -149,6 +163,8 @@ open class StackNavigationController: NSViewController {
 			
 			fromVC?.view.removeFromSuperview()
 			toVC.view.frame = view.bounds
+			
+			isInTransition = false
 			
 			fromVC?.viewDidDisappear(by: self)
 			toVC.viewDidAppear(by: self)
@@ -171,6 +187,8 @@ open class StackNavigationController: NSViewController {
 		
 		let transition: TransitionType = .pop
 		
+		isInTransition = true
+		
 		fromVC.viewWillDisappear(by: self)
 		toVC.viewWillAppear(by: self)
 		
@@ -179,7 +197,17 @@ open class StackNavigationController: NSViewController {
 		
 		if animated {
 			view.addSubview(toVC.view, positioned: .below, relativeTo: fromVC.view)
-			toVC.view.frame = view.bounds
+			
+			let initialFrame_to = NSRect(x: -view.bounds.width / 4,
+										 y: view.bounds.minY,
+										 width: view.bounds.width,
+										 height: view.bounds.height)
+			let destFrame_from = NSRect(x: view.bounds.width,
+										y: view.bounds.minY,
+										width: view.bounds.width,
+										height: view.bounds.height)
+			
+			toVC.view.frame = initialFrame_to
 			
 			// Curtain view
 			let curtainView = isShadowCurtainEnabled ? toVC.setCurtain() : nil
@@ -201,6 +229,7 @@ open class StackNavigationController: NSViewController {
 					// Reset curtain and user interaction state
 					toVC.removeCurtain()
 					self.contentView.preventsUserInteractions = false
+					self.isInTransition = false
 					
 					fromVC.viewDidDisappear(by: self)
 					toVC.viewDidAppear(by: self)
@@ -211,9 +240,8 @@ open class StackNavigationController: NSViewController {
 					self.delegate?.stackNavigationController(self, didMove: fromVC, to: toVC, type: transition)
 				}
 				
-				var newFrame = view.bounds
-				newFrame.origin.x = newFrame.width
-				fromVC.view.animator().frame = newFrame
+				fromVC.view.animator().frame = destFrame_from
+				toVC.view.animator().frame = view.bounds
 				curtainView?.animator().alphaValue = 0.0
 			}
 		}
@@ -225,6 +253,8 @@ open class StackNavigationController: NSViewController {
 			
 			fromVC.view.removeFromSuperview()
 			fromVC.removeFromParent()
+			
+			isInTransition = false
 			
 			fromVC.viewDidDisappear(by: self)
 			toVC.viewDidAppear(by: self)
