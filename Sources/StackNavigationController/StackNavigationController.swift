@@ -55,6 +55,11 @@ open class StackNavigationController: NSViewController {
 		0.65
 	}
 	
+	/// Default animation curve
+	public static var defaultTimingFunction: CAMediaTimingFunction {
+		.easeOutQuint()
+	}
+	
 	
 	// MARK: -
 	
@@ -118,7 +123,7 @@ open class StackNavigationController: NSViewController {
 			NSAnimationContext.runAnimationGroup { context in
 				context.duration = duration ?? Self.defaultAnimationDuration
 				context.allowsImplicitAnimation = true
-				context.timingFunction = timingFunction ?? CAMediaTimingFunction.easeOutQuint()
+				context.timingFunction = timingFunction ?? Self.defaultTimingFunction
 				context.completionHandler = {
 					fromVC.view.removeFromSuperview()
 					
@@ -188,7 +193,7 @@ open class StackNavigationController: NSViewController {
 			NSAnimationContext.runAnimationGroup { context in
 				context.duration = duration ?? Self.defaultAnimationDuration
 				context.allowsImplicitAnimation = true
-				context.timingFunction = timingFunction ?? CAMediaTimingFunction.easeOutQuint()
+				context.timingFunction = timingFunction ?? Self.defaultTimingFunction
 				context.completionHandler = {
 					fromVC.view.removeFromSuperview()
 					fromVC.removeFromParent()
