@@ -7,6 +7,9 @@
 
 import Cocoa
 
+// 0: use default background view; 1: use colored view
+let customBackground = 1
+
 class DemoPageViewController: StackNavigationPlainPageViewController {
 	
 	@IBOutlet var label: NSTextField!
@@ -22,20 +25,11 @@ class DemoPageViewController: StackNavigationPlainPageViewController {
 		button.controlSize = .large
 	}
 	
-	func setRandomBackgroundColor() {
-		view.wantsLayer = true
-		view.layer?.backgroundColor = NSColor(hue: CGFloat.random(in: 0..<1.0),
-											  saturation: 0.5,
-											  brightness: 1.0,
-											  alpha: 1.0).cgColor
-	}
-	
 	private func nextViewController(_ title: String) -> StackNavigationPageViewController {
 		let nextVC = DemoPageViewController.newViewController()
 		nextVC.loadView()
 		nextVC.label.stringValue = title
 		nextVC.title = nextVC.label.stringValue
-		nextVC.setRandomBackgroundColor()
 		
 		return nextVC
 	}
@@ -50,6 +44,17 @@ class DemoPageViewController: StackNavigationPlainPageViewController {
 			stackNavigationController.pushViewController(nextVC, animated: isAnimated) {
 				self.button.isEnabled = true
 			}
+		}
+	}
+	
+	override func buildBackgroundView() -> StackNavigationPageBackgroundView? {
+		if customBackground != 0 {
+			let view = PageBackgroundView()
+			view.setColor()
+			return view
+		}
+		else {
+			return super.buildBackgroundView()
 		}
 	}
 	
@@ -74,3 +79,16 @@ class DemoPageViewController: StackNavigationPlainPageViewController {
 
 }
 
+class PageBackgroundView: StackNavigationPageBackgroundView {
+	
+	func setColor() {
+		layer?.backgroundColor = NSColor(hue: CGFloat.random(in: 0..<1.0),
+										 saturation: 0.5,
+										 brightness: 1.0,
+										 alpha: 1.0).cgColor
+	}
+	
+	override func updateLayer() {
+	}
+	
+}

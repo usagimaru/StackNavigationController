@@ -16,6 +16,10 @@ open class StackNavigationPlainPageViewController: NSViewController, StackNaviga
 	open func viewWillDisappear(by stackNavigationController: StackNavigationController) {}
 	open func viewDidDisappear(by stackNavigationController: StackNavigationController) {}
 	
+	public func buildBackgroundView() -> StackNavigationPageBackgroundView? {
+		StackNavigationPageBackgroundView()
+	}
+	
 }
 
 /// Protocol of a page view controller for StackNavigationController
@@ -29,6 +33,7 @@ public protocol StackNavigationPageViewController: NSViewController {
 	func viewWillDisappear(by stackNavigationController: StackNavigationController)
 	func viewDidDisappear(by stackNavigationController: StackNavigationController)
 	
+	func buildBackgroundView() -> StackNavigationPageBackgroundView?
 }
 
 public extension StackNavigationPageViewController {
@@ -48,19 +53,9 @@ public extension StackNavigationPageViewController {
 	}
 	
 	func setCurtain(positioned position: NSWindow.OrderingMode? = nil,
-					relativeTo otherView: NSView? = nil,
-					curtainViewSetup: (() -> StackNavigationCurtainView)? = nil) -> StackNavigationCurtainView
+					relativeTo otherView: NSView? = nil) -> StackNavigationCurtainView
 	{
-		let curtainView: StackNavigationCurtainView
-		
-		if let setup = curtainViewSetup {
-			curtainView = setup()
-		}
-		else {
-			curtainView = StackNavigationCurtainView()
-			curtainView.wantsLayer = true
-			curtainView.layer?.backgroundColor = NSColor.black.cgColor
-		}
+		let curtainView = buildCurtainView()
 		
 		if let position {
 			view.addSubview(curtainView, positioned: position, relativeTo: otherView)
@@ -77,12 +72,45 @@ public extension StackNavigationPageViewController {
 		return curtainView
 	}
 	
+	func buildCurtainView() -> StackNavigationCurtainView {
+		let curtainView = StackNavigationCurtainView()
+		curtainView.identifier = .init("\(self).curtainView")
+		curtainView.wantsLayer = true
+		curtainView.layer?.backgroundColor = NSColor.black.cgColor
+		return curtainView
+	}
+	
 	func removeCurtain() {
 		view.subviews.filter {
-			$0 is StackNavigationCurtainView
-		}.forEach {
-			$0.removeFromSuperview()
-		}
+			$0.identifier == .init("\(self).curtainView")
+		}.first?.removeFromSuperview()
+	}
+	
+	@discardableResult
+	func setBackgroundView() -> StackNavigationPageBackgroundView? {
+		guard let backgroundView = buildBackgroundView()
+		else { return nil }
+		
+		backgroundView.identifier = .init("\(self).backgroundView")
+		view.addSubview(backgroundView, positioned: .below, relativeTo: nil)
+		
+		backgroundView.translatesAutoresizingMaskIntoConstraints = false
+		backgroundView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+		backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+		backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+		backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+		
+		return backgroundView
+	}
+	
+	func backgroundView() -> StackNavigationPageBackgroundView? {
+		view.subviews.filter {
+			$0.identifier == .init("\(self).backgroundView")
+		}.first as? StackNavigationPageBackgroundView
+	}
+	
+	func removeBackgroundView() {
+		backgroundView()?.removeFromSuperview()
 	}
 	
 }

@@ -32,7 +32,7 @@ class DemoWindowController: NSWindowController,
 		rootVC.loadView()
 		rootVC.label.stringValue = "Root View Controller"
 		rootVC.title = rootVC.label.stringValue
-		rootVC.setRandomBackgroundColor()
+		rootVC.setBackgroundView()
 		
 		stackNavigationController.delegate = self
 		stackNavigationController.preventsUserInteractionsWhenAnimating = false // or `true`

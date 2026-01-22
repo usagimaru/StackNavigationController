@@ -109,6 +109,8 @@ open class StackNavigationController: NSViewController {
 		addChild(toVC)
 		view.addSubview(toVC.view)
 		
+		toVC.setBackgroundView()
+		
 		if let fromVC, animated {
 			// With animation
 			
@@ -197,6 +199,7 @@ open class StackNavigationController: NSViewController {
 		
 		if animated {
 			view.addSubview(toVC.view, positioned: .below, relativeTo: fromVC.view)
+			toVC.setBackgroundView()
 			
 			let initialFrame_to = NSRect(x: -view.bounds.width / 4,
 										 y: view.bounds.minY,
@@ -225,6 +228,8 @@ open class StackNavigationController: NSViewController {
 				context.completionHandler = {
 					fromVC.view.removeFromSuperview()
 					fromVC.removeFromParent()
+					fromVC.removeBackgroundView()
+					toVC.removeBackgroundView()
 					
 					// Reset curtain and user interaction state
 					toVC.removeCurtain()
@@ -250,6 +255,7 @@ open class StackNavigationController: NSViewController {
 			
 			view.addSubview(toVC.view, positioned: .below, relativeTo: fromVC.view)
 			toVC.view.frame = view.bounds
+			toVC.setBackgroundView()
 			
 			fromVC.view.removeFromSuperview()
 			fromVC.removeFromParent()
@@ -321,6 +327,38 @@ open class StackNavigationCurtainView: NSView {
 	
 	open func setAlphaAsZero() {
 		alphaValue = 0
+	}
+	
+}
+
+
+// MARK: -
+
+open class StackNavigationPageBackgroundView: NSView {
+	
+	open override var wantsUpdateLayer: Bool {
+		true
+	}
+	
+	public override init(frame frameRect: NSRect) {
+		super.init(frame: frameRect)
+		setup()
+	}
+	
+	public required init?(coder: NSCoder) {
+		super.init(coder: coder)
+		setup()
+	}
+	
+	open func setup() {
+		wantsLayer = true
+		layerContentsRedrawPolicy = .onSetNeedsDisplay
+		needsDisplay = true
+	}
+	
+	open override func updateLayer() {
+		// apply the system background color of NSWindow
+		layer?.backgroundColor = NSColor.alternatingContentBackgroundColors.last?.cgColor
 	}
 	
 }
