@@ -35,7 +35,7 @@ class DemoWindowController: NSWindowController,
 		rootVC.setBackgroundView()
 		
 		stackNavigationController.delegate = self
-		stackNavigationController.preventsUserInteractionsWhenAnimating = false // or `true`
+		stackNavigationController.preventsUserInteractionsWhenAnimating = true // or `false`
 		stackNavigationController.pushViewController(rootVC, animated: false)
 	}
 	

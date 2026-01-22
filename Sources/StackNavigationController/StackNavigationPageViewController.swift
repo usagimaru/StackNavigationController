@@ -92,7 +92,10 @@ public extension StackNavigationPageViewController {
 		else { return nil }
 		
 		backgroundView.identifier = .init("\(self).backgroundView")
-		view.addSubview(backgroundView, positioned: .below, relativeTo: nil)
+		
+		var subviews = view.subviews
+		subviews.insert(backgroundView, at: 0)
+		view.subviews = subviews
 		
 		backgroundView.translatesAutoresizingMaskIntoConstraints = false
 		backgroundView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true

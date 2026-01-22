@@ -8,7 +8,7 @@
 import Cocoa
 
 // 0: use default background view; 1: use colored view
-let customBackground = 1
+let customBackground = 0
 
 class DemoPageViewController: StackNavigationPlainPageViewController {
 	
@@ -40,9 +40,10 @@ class DemoPageViewController: StackNavigationPlainPageViewController {
 			let nextVC = nextViewController("View Controller #\(count)")
 			let isAnimated = (view.window?.windowController as? DemoWindowController)?.isAnimated ?? false
 			
-			button.isEnabled = false
+			// Prevents focus ring issue during animation
+			button.focusRingType = .none
 			stackNavigationController.pushViewController(nextVC, animated: isAnimated) {
-				self.button.isEnabled = true
+				self.button.focusRingType = .exterior
 			}
 		}
 	}
