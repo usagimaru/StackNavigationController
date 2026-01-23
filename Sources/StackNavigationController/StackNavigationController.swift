@@ -63,6 +63,8 @@ open class StackNavigationController: NSViewController {
 		.easeOutQuint()
 	}
 	
+	private var backgroundViews = [String : StackNavigationPageBackgroundView]()
+	
 	
 	// MARK: -
 	
@@ -87,6 +89,35 @@ open class StackNavigationController: NSViewController {
 		view = StackNavigationView()
 	}
 	
+	
+	// MARK: -
+	
+	private func key(with viewController: StackNavigationPageViewController) -> String {
+		return "\(viewController.hash)"
+	}
+	
+	private func prepareBackgroundView(with viewController: StackNavigationPageViewController, initialFrame: NSRect) {
+		guard let backgroundView = viewController.buildBackgroundView()
+		else { return }
+		
+		let key = key(with: viewController)
+		
+		backgroundView.identifier = .init("backgroundView.\(key)")
+		backgroundView.frame = initialFrame
+		view.addSubview(backgroundView, positioned: .below, relativeTo: viewController.view)
+		backgroundViews[key] = backgroundView
+	}
+	
+	private func backgroundView(with viewController: StackNavigationPageViewController) -> StackNavigationPageBackgroundView? {
+		backgroundViews[key(with: viewController)]
+	}
+	
+	private func removeBackgroundView(with viewController: StackNavigationPageViewController) {
+		let key = key(with: viewController)
+		backgroundViews[key]?.removeFromSuperview()
+		backgroundViews.removeValue(forKey: key)
+	}
+	
 	/// Push view controller
 	open func pushViewController(_ toVC: StackNavigationPageViewController,
 								 animated: Bool,
@@ -109,8 +140,6 @@ open class StackNavigationController: NSViewController {
 		addChild(toVC)
 		view.addSubview(toVC.view)
 		
-		toVC.setBackgroundView()
-		
 		if let fromVC, animated {
 			// With animation
 			
@@ -129,6 +158,9 @@ open class StackNavigationController: NSViewController {
 			let curtainView = isShadowCurtainEnabled ? fromVC.setCurtain() : nil
 			curtainView?.setAlphaAsZero()
 			
+			// Prepare background view
+			prepareBackgroundView(with: toVC, initialFrame: initialFrame_to)
+			
 			// User interaction state
 			if preventsUserInteractionsWhenAnimating {
 				contentView.preventsUserInteractions = true
@@ -146,6 +178,9 @@ open class StackNavigationController: NSViewController {
 					self.contentView.preventsUserInteractions = false
 					self.isInTransition = false
 					
+					// Remove background view
+					self.removeBackgroundView(with: toVC)
+					
 					fromVC.viewDidDisappear(by: self)
 					toVC.viewDidAppear(by: self)
 					
@@ -157,6 +192,7 @@ open class StackNavigationController: NSViewController {
 				
 				fromVC.view.animator().frame = destFrame_from
 				toVC.view.animator().frame = view.bounds
+				backgroundView(with: toVC)?.animator().frame = view.bounds
 				curtainView?.animator().alphaValue = StackNavigationCurtainView.defaultCurtainViewAlphaValue
 			}
 		}
@@ -199,7 +235,6 @@ open class StackNavigationController: NSViewController {
 		
 		if animated {
 			view.addSubview(toVC.view, positioned: .below, relativeTo: fromVC.view)
-			toVC.setBackgroundView()
 			
 			let initialFrame_to = NSRect(x: -view.bounds.width / 4,
 										 y: view.bounds.minY,
@@ -216,6 +251,9 @@ open class StackNavigationController: NSViewController {
 			let curtainView = isShadowCurtainEnabled ? toVC.setCurtain() : nil
 			curtainView?.setAlphaAsDefault()
 			
+			// Prepare background view
+			prepareBackgroundView(with: fromVC, initialFrame: fromVC.view.frame)
+			
 			// User interaction state
 			if preventsUserInteractionsWhenAnimating {
 				contentView.preventsUserInteractions = true
@@ -228,13 +266,14 @@ open class StackNavigationController: NSViewController {
 				context.completionHandler = {
 					fromVC.view.removeFromSuperview()
 					fromVC.removeFromParent()
-					fromVC.removeBackgroundView()
-					toVC.removeBackgroundView()
 					
 					// Reset curtain and user interaction state
 					toVC.removeCurtain()
 					self.contentView.preventsUserInteractions = false
 					self.isInTransition = false
+					
+					// Remove background view
+					self.removeBackgroundView(with: fromVC)
 					
 					fromVC.viewDidDisappear(by: self)
 					toVC.viewDidAppear(by: self)
@@ -246,6 +285,7 @@ open class StackNavigationController: NSViewController {
 				}
 				
 				fromVC.view.animator().frame = destFrame_from
+				backgroundView(with: fromVC)?.animator().frame = destFrame_from
 				toVC.view.animator().frame = view.bounds
 				curtainView?.animator().alphaValue = 0.0
 			}
@@ -255,7 +295,6 @@ open class StackNavigationController: NSViewController {
 			
 			view.addSubview(toVC.view, positioned: .below, relativeTo: fromVC.view)
 			toVC.view.frame = view.bounds
-			toVC.setBackgroundView()
 			
 			fromVC.view.removeFromSuperview()
 			fromVC.removeFromParent()
@@ -351,14 +390,22 @@ open class StackNavigationPageBackgroundView: NSView {
 	}
 	
 	open func setup() {
-		wantsLayer = true
-		layerContentsRedrawPolicy = .onSetNeedsDisplay
-		needsDisplay = true
+		if let v = contentView() {
+			addSubview(v)
+			
+			v.translatesAutoresizingMaskIntoConstraints = false
+			v.topAnchor.constraint(equalTo: topAnchor).isActive = true
+			v.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+			v.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+			v.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+		}
 	}
 	
-	open override func updateLayer() {
-		// apply the system background color of NSWindow
-		layer?.backgroundColor = NSColor.alternatingContentBackgroundColors.last?.cgColor
+	open func contentView() -> NSView? {
+		let v = NSVisualEffectView()
+		v.material = .windowBackground
+		v.blendingMode = .behindWindow
+		return v
 	}
 	
 }

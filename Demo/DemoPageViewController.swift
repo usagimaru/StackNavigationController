@@ -7,9 +7,6 @@
 
 import Cocoa
 
-// 0: use default background view; 1: use colored view
-let customBackground = 0
-
 class DemoPageViewController: StackNavigationPlainPageViewController {
 	
 	@IBOutlet var label: NSTextField!
@@ -49,14 +46,7 @@ class DemoPageViewController: StackNavigationPlainPageViewController {
 	}
 	
 	override func buildBackgroundView() -> StackNavigationPageBackgroundView? {
-		if customBackground != 0 {
-			let view = PageBackgroundView()
-			view.setColor()
-			return view
-		}
-		else {
-			return super.buildBackgroundView()
-		}
+		super.buildBackgroundView()
 	}
 	
 	
@@ -78,18 +68,4 @@ class DemoPageViewController: StackNavigationPlainPageViewController {
 		
 	}
 
-}
-
-class PageBackgroundView: StackNavigationPageBackgroundView {
-	
-	func setColor() {
-		layer?.backgroundColor = NSColor(hue: CGFloat.random(in: 0..<1.0),
-										 saturation: 0.5,
-										 brightness: 1.0,
-										 alpha: 1.0).cgColor
-	}
-	
-	override func updateLayer() {
-	}
-	
 }

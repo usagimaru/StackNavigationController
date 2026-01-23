@@ -10,6 +10,7 @@ import Cocoa
 open class StackNavigationPlainPageViewController: NSViewController, StackNavigationPageViewController {
 	
 	open weak var stackNavigationController: StackNavigationController?
+	open var backgroundView: StackNavigationPageBackgroundView?
 	
 	open func viewWillAppear(by stackNavigationController: StackNavigationController) {}
 	open func viewDidAppear(by stackNavigationController: StackNavigationController) {}
@@ -17,7 +18,10 @@ open class StackNavigationPlainPageViewController: NSViewController, StackNaviga
 	open func viewDidDisappear(by stackNavigationController: StackNavigationController) {}
 	
 	public func buildBackgroundView() -> StackNavigationPageBackgroundView? {
-		StackNavigationPageBackgroundView()
+		if backgroundView == nil {
+			backgroundView = StackNavigationPageBackgroundView()
+		}
+		return backgroundView
 	}
 	
 }
@@ -84,36 +88,6 @@ public extension StackNavigationPageViewController {
 		view.subviews.filter {
 			$0.identifier == .init("\(self).curtainView")
 		}.first?.removeFromSuperview()
-	}
-	
-	@discardableResult
-	func setBackgroundView() -> StackNavigationPageBackgroundView? {
-		guard let backgroundView = buildBackgroundView()
-		else { return nil }
-		
-		backgroundView.identifier = .init("\(self).backgroundView")
-		
-		var subviews = view.subviews
-		subviews.insert(backgroundView, at: 0)
-		view.subviews = subviews
-		
-		backgroundView.translatesAutoresizingMaskIntoConstraints = false
-		backgroundView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-		backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-		backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-		backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-		
-		return backgroundView
-	}
-	
-	func backgroundView() -> StackNavigationPageBackgroundView? {
-		view.subviews.filter {
-			$0.identifier == .init("\(self).backgroundView")
-		}.first as? StackNavigationPageBackgroundView
-	}
-	
-	func removeBackgroundView() {
-		backgroundView()?.removeFromSuperview()
 	}
 	
 }
